@@ -122,7 +122,7 @@ def main():
     if perform_install:
         json_output['changed'] = True
         if module.params.get('manifest', None):
-            module.post_endpoint('config', data={'manifest': manifest.decode()})
+            module.post_endpoint('config', data={'eula_accepted': True, 'manifest': manifest.decode()})
         else:
             module.post_endpoint('config/attach', data={'pool_id': module.params.get('pool_id')})
 
