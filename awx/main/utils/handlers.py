@@ -3,6 +3,7 @@
 
 # Python
 import logging
+import logging.handlers
 import sys
 import traceback
 from datetime import datetime
@@ -14,6 +15,9 @@ from django.utils.encoding import force_str
 
 # AWX
 from awx.main.exceptions import PostRunError
+
+
+__all__ = ['RSysLogHandler', 'SpecialInventoryHandler', 'ColorHandler']
 
 
 class RSysLogHandler(logging.handlers.SysLogHandler):
@@ -98,38 +102,34 @@ class SpecialInventoryHandler(logging.Handler):
 
 
 if settings.COLOR_LOGS is True:
-    try:
-        from logutils.colorize import ColorizingStreamHandler
-        import colorama
+    from logutils.colorize import ColorizingStreamHandler
+    import colorama
 
-        colorama.deinit()
-        colorama.init(wrap=False, convert=False, strip=False)
+    colorama.deinit()
+    colorama.init(wrap=False, convert=False, strip=False)
 
-        class ColorHandler(ColorizingStreamHandler):
-            def colorize(self, line, record):
-                # comment out this method if you don't like the job_lifecycle
-                # logs rendered with cyan text
-                previous_level_map = self.level_map.copy()
-                if record.name == "awx.analytics.job_lifecycle":
-                    self.level_map[logging.INFO] = (None, 'cyan', True)
-                msg = super(ColorHandler, self).colorize(line, record)
-                self.level_map = previous_level_map
-                return msg
+    class ColorHandler(ColorizingStreamHandler):
+        def colorize(self, line, record):
+            # comment out this method if you don't like the job_lifecycle
+            # logs rendered with cyan text
+            previous_level_map = self.level_map.copy()
+            if record.name == "awx.analytics.job_lifecycle":
+                self.level_map[logging.INFO] = (None, 'cyan', True)
+            msg = super(ColorHandler, self).colorize(line, record)
+            self.level_map = previous_level_map
+            return msg
 
-            def format(self, record):
-                message = logging.StreamHandler.format(self, record)
-                return '\n'.join([self.colorize(line, record) for line in message.splitlines()])
+        def format(self, record):
+            message = logging.StreamHandler.format(self, record)
+            return '\n'.join([self.colorize(line, record) for line in message.splitlines()])
 
-            level_map = {
-                logging.DEBUG: (None, 'green', True),
-                logging.INFO: (None, None, True),
-                logging.WARNING: (None, 'yellow', True),
-                logging.ERROR: (None, 'red', True),
-                logging.CRITICAL: (None, 'red', True),
-            }
+        level_map = {
+            logging.DEBUG: (None, 'green', True),
+            logging.INFO: (None, None, True),
+            logging.WARNING: (None, 'yellow', True),
+            logging.ERROR: (None, 'red', True),
+            logging.CRITICAL: (None, 'red', True),
+        }
 
-    except ImportError:
-        # logutils is only used for colored logs in the dev environment
-        pass
 else:
     ColorHandler = logging.StreamHandler
